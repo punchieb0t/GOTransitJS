@@ -1,0 +1,203 @@
+:root {
+  --black: #000;
+  --white: #fff;
+  --dark-grey: #1e1c1c;
+  --light-grey: #dbdbdb;
+  --yellow: #d9d499;
+  --light-green: #9fd30a;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  border: 0 solid #e5e7eb;
+}
+
+body {
+  background-color: var(--black);
+  font-family: 'Overpass', 'Overpass Fallback', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-style: normal;
+  color: var(--white);
+  min-height: 100vh;
+  font-size: 18px;
+}
+
+/* Header */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  background: var(--black);
+  position: relative;
+}
+
+.station-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.go-logo {
+  cursor: pointer;
+  position: relative;
+}
+
+.go-logo img {
+  width: 42px;
+  height: auto;
+}
+
+.station-menu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 10px;
+  background: var(--dark-grey);
+  border: 1px solid #333;
+  border-radius: 8px;
+  overflow: hidden;
+  z-index: 100;
+  min-width: 220px;
+}
+
+.station-menu.show {
+  display: block;
+}
+
+.station-menu div {
+  padding: 14px 20px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.station-menu div:hover {
+  background: #2a2a2a;
+}
+
+.station-info h1 {
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.current-time {
+  font-size: 26px;
+  font-weight: 600;
+  color: var(--white);
+}
+
+/* Table Header */
+.table-header {
+  display: grid;
+  grid-template-columns: 50px 50px 1fr 90px;
+  gap: 14px;
+  padding: 14px 24px;
+  background: var(--dark-grey);
+  font-size: 14px;
+  text-transform: uppercase;
+  color: var(--light-grey);
+}
+
+.table-header > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.table-header > div:nth-child(1) {
+  align-items: center;
+}
+
+.table-header > div:nth-child(2) {
+  align-items: center;
+}
+
+.table-header > div:nth-child(3) {
+  padding-left: 4px;
+}
+
+.table-header > div:last-child {
+  align-items: flex-end;
+  padding-right: 4px;
+}
+
+/* Departures */
+.departures {
+  border-top: 1px solid var(--dark-grey);
+}
+
+.departure-row {
+  display: grid;
+  grid-template-columns: 50px 50px 1fr 90px;
+  gap: 14px;
+  padding: 18px 24px;
+  border-bottom: 3px dotted var(--light-grey);
+  align-items: center;
+}
+
+.platform {
+  font-weight: 700;
+  font-size: 20px;
+  color: var(--light-green);
+  text-align: center;
+}
+
+.route-badge {
+  color: var(--white);
+  font-weight: 700;
+  font-size: 16px;
+  padding: 6px 12px;
+  border-radius: 5px;
+  text-align: center;
+  display: inline-block;
+}
+
+/* Line colors */
+.route-badge.BR { background: #3b82f6; }
+.route-badge.KI { background: #22c55e; }
+.route-badge.LE { background: #ef4444; }
+.route-badge.LW { background: #a8193d; }
+.route-badge.MI { background: #f97316; }
+.route-badge.RH { background: #06b6d4; }
+.route-badge.ST { background: #92400e; }
+.route-badge.default { background: #6b7280; }
+
+.direction {
+  font-weight: 600;
+  font-size: 18px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.time {
+  font-weight: 700;
+  font-size: 22px;
+  color: var(--yellow);
+  text-align: right;
+}
+
+.time.approaching {
+  color: var(--yellow);
+  opacity: 0.6;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.blink-synced {
+  color: var(--light-green);
+  animation: blink 1s ease-in-out infinite;
+}
+
+.loading {
+  text-align: center;
+  padding: 50px 16px;
+  font-size: 18px;
+  color: var(--light-grey);
+}
