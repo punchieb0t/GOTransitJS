@@ -3,20 +3,47 @@ import { NextRequest, NextResponse } from "next/server";
 const API_KEY = "30026843";
 const API_BASE = "https://api.openmetrolinx.com/OpenDataAPI/api/V1";
 
+// Map station codes to their bus stop codes
+const STATION_BUS_CODES: Record<string, string> = {
+  CL: "00181",   // Clarkson GO
+  PO: "02775",   // Port Credit GO
+  OA: "00137",   // Oakville GO
+  ML: "00194",   // Milton GO
+  UN: "02300",   // Union Station Bus Terminal
+};
+
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const stop = searchParams.get("stop") || "CL";
 
   try {
-    const url = `${API_BASE}/Stop/NextService?key=${API_KEY}&stopCode=${stop}&limit=10`;
-    const response = await fetch(url, { next: { revalidate: 30 } });
+    // Fetch trains from train station
+    const trainUrl = `${API_BASE}/Stop/NextService?key=${API_KEY}&stopCode=${stop}&limit=10`;
+    const trainRes = await fetch(trainUrl, { next: { revalidate: 30 } });
+    const trainData = trainRes.ok ? await trainRes.json() : { NextService: { Lines: [] } };
 
-    if (!response.ok) {
-      throw new Error(`API error: ${response.status}`);
+    // Fetch buses from bus stop (if exists for this station)
+    const busStopCode = STATION_BUS_CODES[stop];
+    let busData = { NextService: { Lines: [] } };
+    
+    if (busStopCode) {
+      const busUrl = `${API_BASE}/Stop/NextService?key=${API_KEY}&stopCode=${busStopCode}&limit=10`;
+      const busRes = await fetch(busUrl, { next: { revalidate: 30 } });
+      if (busRes.ok) {
+        busData = await busRes.json();
+      }
     }
 
-    const data = await response.json();
-    return NextResponse.json(data);
+    // Combine trains and buses
+    const trainLines = trainData.NextService?.Lines || [];
+    const busLines = busData.NextService?.Lines || [];
+    const combinedLines = [...trainLines, ...busLines];
+
+    return NextResponse.json({
+      NextService: {
+        Lines: combinedLines
+      }
+    });
   } catch (error) {
     console.error("Proxy error:", error);
     return NextResponse.json(
