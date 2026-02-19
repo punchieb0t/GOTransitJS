@@ -8,6 +8,7 @@ interface Departure {
   route: string;
   destination: string;
   minutes: number;
+  type: "T" | "B";
 }
 
 export default function Home() {
@@ -16,6 +17,7 @@ export default function Home() {
   const [departures, setDepartures] = useState<Departure[]>([]);
   const [menuOpen, setMenuOpen] = useState(false);
   const [currentTime, setCurrentTime] = useState("");
+  const [activeTab, setActiveTab] = useState<"trains" | "buses">("trains");
 
   useEffect(() => {
     updateTime();
@@ -62,11 +64,12 @@ export default function Home() {
             route: line.LineCode || "LW",
             destination: dest,
             minutes: mins,
+            type: line.ServiceType || "T",
           };
         })
         .filter((d: Departure) => d.minutes >= 0)
         .sort((a: Departure, b: Departure) => a.minutes - b.minutes)
-        .slice(0, 6);
+        .slice(0, 10);
 
       setDepartures(deps);
     } catch (err) {
@@ -83,6 +86,10 @@ export default function Home() {
   const toggleMenu = () => {
     setMenuOpen(!menuOpen);
   };
+
+  const trainDepartures = departures.filter(d => d.type === "T");
+  const busDepartures = departures.filter(d => d.type === "B");
+  const displayedDepartures = activeTab === "trains" ? trainDepartures : busDepartures;
 
   return (
     <main>
@@ -109,6 +116,22 @@ export default function Home() {
         </div>
       </div>
 
+      {/* Tabs */}
+      <div className="tabs">
+        <div 
+          className={`tab ${activeTab === "trains" ? "active" : ""}`}
+          onClick={() => setActiveTab("trains")}
+        >
+          Trains
+        </div>
+        <div 
+          className={`tab ${activeTab === "buses" ? "active" : ""}`}
+          onClick={() => setActiveTab("buses")}
+        >
+          Buses
+        </div>
+      </div>
+
       <div className="table-header">
         <div>
           <div style={{ fontWeight: 700 }}>Pltfm.</div>
@@ -129,10 +152,14 @@ export default function Home() {
       </div>
 
       <div className="departures" id="departures">
-        {departures.length === 0 ? (
-          <div className="loading">Loading departures...</div>
+        {displayedDepartures.length === 0 ? (
+          <div className="loading">
+            {activeTab === "trains" 
+              ? (trainDepartures.length === 0 ? "No trains" : "Loading...")
+              : (busDepartures.length === 0 ? "No buses" : "Loading...")}
+          </div>
         ) : (
-          departures.map((dep, index) => {
+          displayedDepartures.map((dep, index) => {
             const isApproaching = dep.minutes < 5;
             const routeClass = dep.route || "default";
             const timeDisplay =
