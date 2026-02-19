@@ -11,13 +11,15 @@ interface Departure {
   type: "T" | "B";
 }
 
+type TransportType = "trains" | "buses";
+
 export default function Home() {
   const [currentStop, setCurrentStop] = useState("CL");
   const [stationName, setStationName] = useState("Clarkson GO");
   const [departures, setDepartures] = useState<Departure[]>([]);
   const [menuOpen, setMenuOpen] = useState(false);
   const [currentTime, setCurrentTime] = useState("");
-  const [activeTab, setActiveTab] = useState<"trains" | "buses">("trains");
+  const [transportType, setTransportType] = useState<TransportType>("trains");
 
   useEffect(() => {
     updateTime();
@@ -30,7 +32,7 @@ export default function Home() {
       clearInterval(timeInterval);
       clearInterval(fetchInterval);
     };
-  }, [currentStop]);
+  }, [currentStop, transportType]);
 
   const updateTime = () => {
     const now = new Date();
@@ -77,9 +79,10 @@ export default function Home() {
     }
   };
 
-  const selectStation = (code: string, name: string) => {
+  const selectStation = (code: string, name: string, type: TransportType = "trains") => {
     setCurrentStop(code);
     setStationName(name);
+    setTransportType(type);
     setMenuOpen(false);
   };
 
@@ -89,7 +92,7 @@ export default function Home() {
 
   const trainDepartures = departures.filter(d => d.type === "T");
   const busDepartures = departures.filter(d => d.type === "B");
-  const displayedDepartures = activeTab === "trains" ? trainDepartures : busDepartures;
+  const displayedDepartures = transportType === "trains" ? trainDepartures : busDepartures;
 
   return (
     <main>
@@ -98,37 +101,33 @@ export default function Home() {
           <div className="go-logo" onClick={toggleMenu}>
             <img src="/go_transit_logo.svg" alt="GO Transit" />
             <div className={`station-menu ${menuOpen ? "show" : ""}`}>
-              <div onClick={() => selectStation("CL", "Clarkson GO")}>
+              <div className="menu-section">Trains</div>
+              <div onClick={() => selectStation("CL", "Clarkson GO", "trains")}>
                 Clarkson GO
               </div>
-              <div onClick={() => selectStation("ML", "Milton GO")}>
+              <div onClick={() => selectStation("ML", "Milton GO", "trains")}>
                 Milton GO
               </div>
-              <div onClick={() => selectStation("UN", "Union Station")}>
+              <div onClick={() => selectStation("UN", "Union Station", "trains")}>
+                Union Station
+              </div>
+              <div className="menu-section">Buses</div>
+              <div onClick={() => selectStation("CL", "Clarkson GO", "buses")}>
+                Clarkson GO
+              </div>
+              <div onClick={() => selectStation("ML", "Milton GO", "buses")}>
+                Milton GO
+              </div>
+              <div onClick={() => selectStation("UN", "Union Station", "buses")}>
                 Union Station
               </div>
             </div>
           </div>
           <h1 id="stationName">{stationName}</h1>
+          <span className="transport-badge">{transportType === "trains" ? "🚂" : "🚌"}</span>
         </div>
         <div className="current-time" id="currentTime">
           {currentTime}
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="tabs">
-        <div 
-          className={`tab ${activeTab === "trains" ? "active" : ""}`}
-          onClick={() => setActiveTab("trains")}
-        >
-          Trains
-        </div>
-        <div 
-          className={`tab ${activeTab === "buses" ? "active" : ""}`}
-          onClick={() => setActiveTab("buses")}
-        >
-          Buses
         </div>
       </div>
 
@@ -154,7 +153,7 @@ export default function Home() {
       <div className="departures" id="departures">
         {displayedDepartures.length === 0 ? (
           <div className="loading">
-            {activeTab === "trains" 
+            {transportType === "trains" 
               ? (trainDepartures.length === 0 ? "No trains" : "Loading...")
               : (busDepartures.length === 0 ? "No buses" : "Loading...")}
           </div>
