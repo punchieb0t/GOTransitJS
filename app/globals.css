@@ -224,8 +224,31 @@ body {
   opacity: 0.6;
 }
 
+/* Time chips for grouped departures */
+.times-container {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.time-chip {
+  display: inline-block;
+  font-weight: 700;
+  font-size: 22px;
+  color: var(--yellow);
+}
+
+.time-chip.second {
+  opacity: 0.6; /* 60% opacity for second train */
+}
+
+.time-chip.due {
+  color: var(--light-green);
+  animation: blink 1s ease-in-out infinite;
+}
+
 @keyframes blink {
-  0%, 100% { opacity: 1; }
   50% { opacity: 0.3; }
 }
 

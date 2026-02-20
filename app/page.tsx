@@ -11,12 +11,21 @@ interface Departure {
   type: "T" | "B";
 }
 
+// Group of departures with same platform, route, and destination
+interface DepartureGroup {
+  platform: string;
+  route: string;
+  destination: string;
+  times: number[]; // Array of minutes
+  type: "T" | "B";
+}
+
 type TransportType = "trains" | "buses";
 
 export default function Home() {
   const [currentStop, setCurrentStop] = useState("CL");
   const [stationName, setStationName] = useState("Clarkson GO");
-  const [departures, setDepartures] = useState<Departure[]>([]);
+  const [departureGroups, setDepartureGroups] = useState<DepartureGroup[]>([]);
   const [menuOpen, setMenuOpen] = useState(false);
   const [currentTime, setCurrentTime] = useState("");
   const [transportType, setTransportType] = useState<TransportType>("trains");
@@ -47,12 +56,14 @@ export default function Home() {
       const lines = data.NextService?.Lines || [];
 
       if (lines.length === 0) {
-        setDepartures([]);
+        setDepartureGroups([]);
         return;
       }
 
       const now = new Date();
-      const deps = lines
+      
+      // Parse all departures
+      const allDepartures: Departure[] = lines
         .filter((line: any) => line.ComputedDepartureTime)
         .map((line: any) => {
           const depTime = new Date(line.ComputedDepartureTime);
@@ -70,10 +81,44 @@ export default function Home() {
           };
         })
         .filter((d: Departure) => d.minutes >= 0)
-        .sort((a: Departure, b: Departure) => a.minutes - b.minutes)
-        .slice(0, 10);
+        .sort((a: Departure, b: Departure) => a.minutes - b.minutes);
 
-      setDepartures(deps);
+      // Group by platform + route + destination
+      const groups: { [key: string]: DepartureGroup } = {};
+      
+      for (const dep of allDepartures) {
+        const key = `${dep.platform}-${dep.route}-${dep.destination}`;
+        
+        if (!groups[key]) {
+          groups[key] = {
+            platform: dep.platform,
+            route: dep.route,
+            destination: dep.destination,
+            times: [],
+            type: dep.type,
+          };
+        }
+        
+        // Add time if not already in the group (avoid duplicates)
+        if (!groups[key].times.includes(dep.minutes)) {
+          groups[key].times.push(dep.minutes);
+        }
+      }
+
+      // Sort times within each group and take first 2
+      const groupedDepartures = Object.values(groups)
+        .map(g => ({
+          ...g,
+          times: g.times.sort((a, b) => a - b).slice(0, 2),
+        }))
+        .sort((a, b) => {
+          // Sort groups by their earliest time
+          const aEarliest = a.times[0] ?? 999;
+          const bEarliest = b.times[0] ?? 999;
+          return aEarliest - bEarliest;
+        });
+
+      setDepartureGroups(groupedDepartures);
     } catch (err) {
       console.error(err);
     }
@@ -90,9 +135,9 @@ export default function Home() {
     setMenuOpen(!menuOpen);
   };
 
-  const trainDepartures = departures.filter(d => d.type === "T");
-  const busDepartures = departures.filter(d => d.type === "B");
-  const displayedDepartures = transportType === "trains" ? trainDepartures : busDepartures;
+  const trainGroups = departureGroups.filter(g => g.type === "T");
+  const busGroups = departureGroups.filter(g => g.type === "B");
+  const displayedGroups = transportType === "trains" ? trainGroups : busGroups;
 
   return (
     <main>
@@ -151,32 +196,37 @@ export default function Home() {
       </div>
 
       <div className="departures" id="departures">
-        {displayedDepartures.length === 0 ? (
+        {displayedGroups.length === 0 ? (
           <div className="loading">
             {transportType === "trains" 
-              ? (trainDepartures.length === 0 ? "No trains" : "Loading...")
-              : (busDepartures.length === 0 ? "No buses" : "Loading...")}
+              ? (trainGroups.length === 0 ? "No trains" : "Loading...")
+              : (busGroups.length === 0 ? "No buses" : "Loading...")}
           </div>
         ) : (
-          displayedDepartures.map((dep, index) => {
-            const isApproaching = dep.minutes < 5;
-            const routeClass = dep.route || "default";
-            const timeDisplay =
-              dep.minutes === 0 ? (
-                <span className="blink-synced">Due</span>
-              ) : (
-                dep.minutes
-              );
-
+          displayedGroups.map((group, index) => {
+            const routeClass = group.route || "default";
+            
             return (
               <div className="departure-row" key={index}>
-                <div className="platform">{dep.platform}</div>
+                <div className="platform">{group.platform}</div>
                 <div>
-                  <span className={`route-badge ${routeClass}`}>{dep.route}</span>
+                  <span className={`route-badge ${routeClass}`}>{group.route}</span>
                 </div>
-                <div className="direction">{dep.destination}</div>
-                <div className={`time ${isApproaching ? "approaching" : ""}`}>
-                  {timeDisplay}
+                <div className="direction">{group.destination}</div>
+                <div className="times-container">
+                  {group.times.map((mins, timeIndex) => {
+                    const isFirst = timeIndex === 0;
+                    const isDue = mins === 0;
+                    
+                    return (
+                      <span 
+                        key={timeIndex} 
+                        className={`time-chip ${!isFirst ? "second" : ""} ${isDue ? "due" : ""}`}
+                      >
+                        {isDue ? "Due" : mins}
+                      </span>
+                    );
+                  })}
                 </div>
               </div>
             );
